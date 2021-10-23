@@ -7,6 +7,7 @@ const connectMongo = require('connect-mongo');
 const expressSession = require('express-session');
 const logger = require('morgan');
 const serveFavicon = require('serve-favicon');
+const cors = require('cors');
 const basicAuthenticationDeserializer = require('./middleware/basic-authentication-deserializer.js');
 const bindUserToViewLocals = require('./middleware/bind-user-to-view-locals.js');
 const baseRouter = require('./routes/index');
@@ -14,9 +15,17 @@ const authenticationRouter = require('./routes/authentication');
 
 const app = express();
 
+// We're telling the server to accept requests from the client application
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'https://hoppscotch.io'],
+    credentials: true
+  })
+);
 app.use(serveFavicon(path.join(__dirname, 'public/images', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(express.json());
+// app.use(express.urlencoded()); // This is no longer needed
+app.use(express.json()); // Parse JSON encoded request bodies
 app.use(
   expressSession({
     secret: process.env.SESSION_SECRET,
@@ -24,7 +33,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 15 * 24 * 60 * 60 * 1000,
-      httpOnly: true
+      httpOnly: true,
+      sameSite: false,
+      secure: false
     },
     store: connectMongo.create({
       mongoUrl: process.env.MONGODB_URI,
